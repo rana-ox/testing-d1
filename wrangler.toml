@@ -1,0 +1,8 @@
+
+name = "cf-d1-comments-template"
+compatibility_date = "2025-12-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "your-d1-name"
+database_id = "00000000-0000-0000-0000-000000000000"
