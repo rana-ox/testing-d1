@@ -2,6 +2,7 @@
  * Cloudflare Pages Function: /api/feedback
  * - GET: list feedback for a page
  * - POST: create a feedback entry
+ * - DELETE: remove a feedback entry (only by owner)
  */
 export async function onRequest(context) {
   const { request, env } = context;
@@ -63,34 +64,36 @@ export async function onRequest(context) {
       return json({ ok: true });
     }
 
+    // DELETE /api/feedback
+    if (request.method === "DELETE") {
+      const { id, username } = await request.json();
+
+      // Fetch the comment
+      const row = await env.DB
+        .prepare("SELECT username FROM feedback WHERE id = ?1")
+        .bind(id)
+        .first();
+
+      if (!row) {
+        return json({ error: "Comment not found" }, 404);
+      }
+
+      if (row.username !== username) {
+        return json({ error: "Not authorized to delete this comment" }, 403);
+      }
+
+      await env.DB
+        .prepare("DELETE FROM feedback WHERE id = ?1")
+        .bind(id)
+        .run();
+
+      return json({ ok: true });
+    }
+
     // Method not allowed
-    return json({ error: "Method not allowed" }, 405, { Allow: "GET, POST" });
+    return json({ error: "Method not allowed" }, 405, { Allow: "GET, POST, DELETE" });
   } catch (err) {
     // Catch SQL or runtime errors
     return json({ error: "Server error", details: err.message }, 500);
   }
-}
-if (request.method === "DELETE") {
-  const { id, username } = await request.json();
-
-  // Fetch the comment
-  const row = await env.DB
-    .prepare("SELECT username FROM feedback WHERE id = ?1")
-    .bind(id)
-    .first();
-
-  if (!row) {
-    return json({ error: "Comment not found" }, 404);
-  }
-
-  if (row.username !== username) {
-    return json({ error: "Not authorized to delete this comment" }, 403);
-  }
-
-  await env.DB
-    .prepare("DELETE FROM feedback WHERE id = ?1")
-    .bind(id)
-    .run();
-
-  return json({ ok: true });
 }
