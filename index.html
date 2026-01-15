@@ -1,110 +1,165 @@
-
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Cloudflare D1 — Comments & Ratings</title>
-  <link rel="preconnect" href="https://challenges.cloudflare.com" />
-  <!-- Turnstile: optional bot protection. Replace data-sitekey with your site key. -->
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <meta charset="UTF-8">
+  <title>Feedback Portal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; }
-    header { background:#0f172a; color:#fff; padding:1rem; }
-    main { max-width: 760px; margin: 1rem auto; padding: 0 1rem; }
-    form { display:grid; gap:.75rem; background:#f8fafc; padding:1rem; border:1px solid #e2e8f0; border-radius:.5rem; }
-    input, textarea, select, button { padding:.5rem; font: inherit; }
-    .list .item { padding:.75rem 0; border-bottom:1px solid #e2e8f0; }
-    .stars { color:#f59e0b; font-size:1rem; }
-    .muted { color:#64748b; font-size:.875rem; }
+    :root {
+      --bg: #f9fafb;
+      --card: #ffffff;
+      --primary: #2563eb;
+      --secondary: #6b7280;
+      --border: #e5e7eb;
+      --radius: 8px;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      margin: 0;
+      padding: 2rem;
+      color: #111827;
+    }
+    h1 {
+      text-align: center;
+      font-weight: 600;
+      margin-bottom: 2rem;
+    }
+    form {
+      background: var(--card);
+      padding: 1.5rem;
+      border-radius: var(--radius);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      max-width: 600px;
+      margin: 0 auto 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    input, textarea, button {
+      font: inherit;
+      padding: 0.75rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    #feedbackList {
+      max-width: 600px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .comment {
+      background: var(--card);
+      padding: 1rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .comment strong {
+      color: var(--primary);
+    }
+    .comment small {
+      color: var(--secondary);
+      display: block;
+      margin-top: 0.25rem;
+    }
+    .comment button {
+      margin-top: 0.5rem;
+      background: #ef4444;
+    }
+    .comment button:hover {
+      background: #dc2626;
+    }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Comments & Ratings (Cloudflare Pages + D1)</h1>
-  </header>
+  <h1>💬 Feedback Portal</h1>
 
-  <main>
-    <section>
-      <h2>Leave feedback</h2>
-      <form id="feedback-form">
-        <input type="text" name="username" placeholder="Your name (optional)" />
-        <label>
-          Rating:
-          <select name="rating" required>
-            <option value="">Select…</option>
-            <option>1</option>
-            <option>2</option>
-            <option>3</option>
-            <option>4</option>
-            <option>5</option>
-          </select>
-        </label>
-        <textarea name="comment" placeholder="Your comment" required></textarea>
+  <!-- Feedback form -->
+  <form id="feedbackForm">
+    <input type="text" name="username" placeholder="Your name" required>
+    <input type="number" name="rating" min="1" max="5" placeholder="Rating (1–5)" required>
+    <textarea name="comment" placeholder="Your comment..." required></textarea>
+    <button type="submit">Submit Feedback</button>
+  </form>
 
-        <!-- Turnstile widget: set your sitekey or remove if not using -->
-        <div class="cf-turnstile" data-sitekey="YOUR_TURNSTILE_SITE_KEY" data-theme="auto"></div>
-
-        <button type="submit">Submit</button>
-      </form>
-    </section>
-
-    <section class="list">
-      <h2>Recent feedback</h2>
-      <div id="feedback-list"></div>
-    </section>
-  </main>
+  <!-- Feedback list -->
+  <div id="feedbackList"></div>
 
   <script>
-    const PAGE_SLUG = "index"; // change per page if needed
+    const apiUrl = "/api/feedback";
 
     async function loadFeedback() {
-      const res = await fetch(`/api/feedback?page=${encodeURIComponent(PAGE_SLUG)}`);
+      const res = await fetch(apiUrl + "?page=index");
       const data = await res.json();
-      const list = document.getElementById("feedback-list");
-      list.innerHTML = data.map(item => `
-        <div class="item">
-          <div class="stars">${"★".repeat(item.rating)}${"☆".repeat(5-item.rating)}</div>
-          <div><strong>${escapeHtml(item.username || "Anonymous")}</strong></div>
-          <div>${escapeHtml(item.comment)}</div>
-          <div class="muted">${new Date(item.created_at).toLocaleString()}</div>
-        </div>
-      `).join("");
+      const list = document.getElementById("feedbackList");
+      list.innerHTML = "";
+      data.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "comment";
+        div.innerHTML = `
+          <strong>${item.username || "Anonymous"}</strong> rated ${item.rating}/5<br>
+          ${item.comment}<br>
+          <small>${new Date(item.created_at).toLocaleString()}</small>
+          <button onclick="deleteComment(${item.id}, '${item.username}')">Delete</button>
+        `;
+        list.appendChild(div);
+      });
     }
 
-    document.getElementById("feedback-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const fd = new FormData(e.target);
-      const payload = {
-        page_slug: PAGE_SLUG,
-        username: fd.get("username"),
-        rating: Number(fd.get("rating")),
-        comment: fd.get("comment"),
-        // Turnstile auto-injects a hidden field named 'cf-turnstile-response' into the form.
-        turnstileToken: fd.get("cf-turnstile-response") || null,
-      };
-
-      const res = await fetch("/api/feedback", {
-        method: "POST",
+    async function deleteComment(id, username) {
+      const res = await fetch(apiUrl, {
+        method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ id, username })
       });
-
-      if (res.ok) {
-        e.target.reset();
-        // Turnstile tokens are single-use and expire; reset the widget if present
-        if (window.turnstile) { try { window.turnstile.reset(); } catch(_){} }
+      const result = await res.json();
+      if (result.ok) {
         loadFeedback();
       } else {
-        const err = await res.json().catch(() => ({ error: "Failed" }));
-        alert("Submission failed: " + (err.error || res.status));
+        alert("Delete failed: " + result.error);
+      }
+    }
+
+    document.getElementById("feedbackForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      const form = e.target;
+      const data = {
+        page_slug: "index",
+        username: form.username.value,
+        rating: parseInt(form.rating.value),
+        comment: form.comment.value
+      };
+      const res = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      if (result.ok) {
+        form.reset();
+        loadFeedback();
+      } else {
+        alert("Submit failed: " + result.error);
       }
     });
-
-    function escapeHtml(s) {
-      const map = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' };
-      return String(s || "").replace(/[&<>"']/g, m => map[m]);
-    }
 
     loadFeedback();
   </script>
