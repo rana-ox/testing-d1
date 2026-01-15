@@ -1,5 +1,3 @@
-
--- D1 / SQLite schema for comments & ratings
 CREATE TABLE IF NOT EXISTS feedback (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   page_slug TEXT NOT NULL,
