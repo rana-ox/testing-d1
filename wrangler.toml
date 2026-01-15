@@ -1,8 +1,7 @@
-
-name = "cf-d1-comments-template"
-compatibility_date = "2025-12-01"
+name = "testing-d1"
+compatibility_date = "2025-01-15"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "check"
+database_name = "db"
 database_id = "575f07f5-658f-4a5c-a80c-38b0320d804f"
