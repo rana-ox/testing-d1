@@ -70,3 +70,27 @@ export async function onRequest(context) {
     return json({ error: "Server error", details: err.message }, 500);
   }
 }
+if (request.method === "DELETE") {
+  const { id, username } = await request.json();
+
+  // Fetch the comment
+  const row = await env.DB
+    .prepare("SELECT username FROM feedback WHERE id = ?1")
+    .bind(id)
+    .first();
+
+  if (!row) {
+    return json({ error: "Comment not found" }, 404);
+  }
+
+  if (row.username !== username) {
+    return json({ error: "Not authorized to delete this comment" }, 403);
+  }
+
+  await env.DB
+    .prepare("DELETE FROM feedback WHERE id = ?1")
+    .bind(id)
+    .run();
+
+  return json({ ok: true });
+}
